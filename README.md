@@ -92,3 +92,50 @@ python eval/screenSpot_pro_azg.py \
   --model_path /data4/rashid_GUI/models/GUI-Actor-7B \
   --entropy_threshold 0.75 \
   --output_dir /data4/rashid_GUI/outputs/eval_results_azg
+
+
+
+
+  ## Attention-based-zoom-grounding
+```
+  adaptive-zoom-grounding/
+├── README.md                           # Project overview & results
+├── LICENSE
+├── requirements.txt                    # Python dependencies
+├── setup.py                            # Package setup
+│
+├── src/
+│   └── azg/                            # Core AZG package
+│       ├── __init__.py
+│       ├── entropy.py                  # Entropy computation module
+│       ├── zoom.py                     # Crop & resize utilities
+│       └── inference_azg.py            # Full AZG inference pipeline
+│
+├── eval/
+│   ├── screenSpot_pro_azg.py           # ScreenSpot-Pro with AZG
+│   ├── run_eval_azg.sh                 # Evaluation launch script
+│   └── compare_results.py             # Baseline vs AZG comparison
+│
+├── experiments/
+│   ├── configs/
+│   │   ├── threshold_ablation.yaml     # Entropy threshold configs
+│   │   └── zoom_radius_ablation.yaml   # Zoom region size configs
+│   ├── results/                        # Experiment outputs (gitignored)
+│   └── run_ablations.sh               # Run all ablation experiments
+│
+├── notebooks/
+│   ├── 01_failure_analysis.ipynb       # Original failure analysis
+│   ├── 02_entropy_visualization.ipynb  # Entropy distribution study
+│   └── 03_results_comparison.ipynb     # Final results & figures
+│
+├── docs/
+│   ├── method.md                       # Detailed method description
+│   ├── architecture.md                 # GUI-Actor architecture notes
+│   ├── reproduction.md                 # Reproduction notes
+│   └── figures/                        # Paper figures
+│
+└── paper/
+    ├── main.tex                        # Workshop paper (4 pages)
+    ├── references.bib                  # Bibliography
+    └── figures/                         # LaTeX figures
+```
