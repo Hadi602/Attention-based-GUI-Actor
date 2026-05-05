@@ -1,141 +1,104 @@
-# Attention-based-GUI-Actor
-GUI-Actor produces a native spatial attention map that encodes richer geometric uncertainty. We exploit this structure to build a zoom refinement module that is architecturally native to GUI-Actor, requires no retraining, and improves icon grounding accuracy on professional software domains.
-# Attention-based Zoom Grounding (AZG)
+"# ScreenAbstain — A Null-Patch Action Head for Refusal-Aware Coordinate-Free GUI Grounding
 
-> Improving GUI-Actor for professional software icon grounding via 
-> entropy-gated inference-time adaptive zoom.
+> A research extension of **GUI-Actor** (Microsoft Research, NeurIPS 2025) that endows the model with the ability to *abstain* when an instruction refers to a UI element that is not present on screen.
 
-## Key Results
+## TL;DR
 
-| Benchmark | Baseline | AZG (Ours) | Improvement |
-|-----------|----------|------------|-------------|
-| ScreenSpot-Pro (Overall) | 41.37% | TBD | TBD |
-| CAD Icons | 9.38% | TBD | TBD |
-| Creative Icons | 10.49% | TBD | TBD |
-| Scientific Icons | 22.73% | TBD | TBD |
+Coordinate-free GUI grounding models such as GUI-Actor compute a softmax over *existing* image patches, so they cannot say \"no target on screen\" — they always click somewhere. On the brand-new **VenusBench-GD Refusal Grounding** benchmark (arXiv 2512.16501, Dec 2025), 14 of 16 SOTA GUI models score 0.00–0.22% accuracy.
 
-## Method
-
-GUI-Actor uses a fixed 28×28px patch size in its vision encoder. 
-Icons smaller than this (common in professional software) lose 
-visual signal when merged with neighboring patches.
-
-**AZG Solution:** When the action head's attention entropy is high 
-(indicating uncertainty), we automatically crop the high-probability 
-region and re-run inference at higher effective resolution.
+We add a single learnable **null-patch** to the action head:
 
 ```
-Full Image → Action Head → Entropy HIGH?
-                                ↓ YES
-                         Crop top-k patches
-                                ↓
-                         Resize to full resolution
-                                ↓
-                         Re-run Action Head
-                                ↓
-                         Remap coordinates → Final prediction
+softmax over [patch_1, patch_2, ..., patch_N, null_patch]
+                                              ^^^^^^^^^
+                                              new — represents \"no target on screen\"
 ```
 
-**No retraining needed.** This is purely an inference-time modification.
+Training: keep VLM backbone and verifier frozen, only train the action head with mixed positive (standard grounding) + synthetic refusal data.
 
-## Installation
+## Key results (target)
+
+| Method                      | ScreenSpot-Pro | VenusBench-GD Refusal |
+| --------------------------- | -------------: | --------------------: |
+| GUI-Actor-7B (reproduced)   |          41.4% |                  0.0% |
+| GUI-Actor-7B + entropy thresh (baseline) |  ~40% |               ~10–15% |
+| **GUI-Actor-7B + null-patch (ours)**     |  ≥ 40% |              **≥ 30%** |
+
+## Repo layout
+
+```
+Attention-based-GUI-Actor/
+├── README.md                  ← you are here
+├── GUIDE.md                   ← step-by-step daily plan
+├── requirements.txt
+├── setup.py
+├── docs/
+│   ├── 00_motivation.md
+│   ├── 01_related_work.md
+│   ├── 02_method.md           ← method specification
+│   └── 03_experiments_plan.md
+├── data/                      ← (gitignored) downloaded benchmarks + synthetic data
+├── src/screen_abstain/
+│   ├── models/
+│   │   ├── action_head_with_null.py   ⭐ core contribution
+│   │   └── patched_model.py            wrapper around GUI-Actor
+│   ├── data/
+│   │   ├── refusal_perturbation.py    synthetic refusal generator
+│   │   ├── venusbench_loader.py
+│   │   └── inspect_refusal_data.py
+│   ├── training/
+│   │   ├── train_action_head.py
+│   │   └── losses.py
+│   └── eval/
+│       ├── evaluate_refusal.py
+│       ├── evaluate_baseline_entropy.py
+│       └── evaluate_screenspot_pro.py
+├── scripts/                   bash entry points
+└── experiments/
+    ├── configs/
+    └── results/
+```
+
+## Quick start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/adaptive-zoom-grounding.git
-cd adaptive-zoom-grounding
+conda activate gui_actor
 pip install -e .
+bash scripts/00_setup.sh
+bash scripts/01_run_baseline_on_venusbench.sh   # produces the 0% baseline number
 ```
 
-## Usage
-
-```python
-from azg.inference_azg import inference_with_adaptive_zoom
-
-pred = inference_with_adaptive_zoom(
-    conversation, model, tokenizer, processor,
-    entropy_threshold=0.75,
-    zoom_padding=0.15
-)
-```
-
-## Evaluation
-
-```bash
-python eval/screenSpot_pro_azg.py \
-    --model_path /path/to/GUI-Actor-7B \
-    --entropy_threshold 0.75 \
-    --output_dir outputs/azg_results
-```
+For the full plan see [`GUIDE.md`](./GUIDE.md).
 
 ## Citation
 
 ```bibtex
-@article{gui-actor-2025,
-  title={GUI-Actor: Coordinate-Free Visual Grounding for GUI Agents},
-  author={...},
-  journal={arXiv preprint arXiv:2506.03143},
-  year={2025}
+@misc{screenabstain2026,
+  title  = {ScreenAbstain: A Null-Patch Action Head for Refusal-Aware Coordinate-Free GUI Grounding},
+  author = {Hadi and ...},
+  year   = {2026},
+  note   = {arXiv preprint (forthcoming)}
 }
 ```
 
-## AZG Implementation Code
-Ready-to-use Python files. Copy these to your server at src/azg/
-
-## How to use the code:
-On server:
-cd /data4/rashid_GUI/GUI-Actor
-mkdir -p src/azg
-touch src/azg/__init__.py
-
-Put all files in the server into src/azg and then run the evaluation;
-python eval/screenSpot_pro_azg.py \
-  --model_path /data4/rashid_GUI/models/GUI-Actor-7B \
-  --entropy_threshold 0.75 \
-  --output_dir /data4/rashid_GUI/outputs/eval_results_azg
-
-
-
-
-  ## Attention-based-zoom-grounding
+We build on GUI-Actor:
+```bibtex
+@inproceedings{wu2025guiactor,
+  title  = {GUI-Actor: Coordinate-Free Visual Grounding for GUI Agents},
+  author = {Wu, Qianhui and others},
+  booktitle = {NeurIPS},
+  year   = {2025}
+}
 ```
-  adaptive-zoom-grounding/
-├── README.md                           # Project overview & results
-├── LICENSE
-├── requirements.txt                    # Python dependencies
-├── setup.py                            # Package setup
-│
-├── src/
-│   └── azg/                            # Core AZG package
-│       ├── __init__.py
-│       ├── entropy.py                  # Entropy computation module
-│       ├── zoom.py                     # Crop & resize utilities
-│       └── inference_azg.py            # Full AZG inference pipeline
-│
-├── eval/
-│   ├── screenSpot_pro_azg.py           # ScreenSpot-Pro with AZG
-│   ├── run_eval_azg.sh                 # Evaluation launch script
-│   └── compare_results.py             # Baseline vs AZG comparison
-│
-├── experiments/
-│   ├── configs/
-│   │   ├── threshold_ablation.yaml     # Entropy threshold configs
-│   │   └── zoom_radius_ablation.yaml   # Zoom region size configs
-│   ├── results/                        # Experiment outputs (gitignored)
-│   └── run_ablations.sh               # Run all ablation experiments
-│
-├── notebooks/
-│   ├── 01_failure_analysis.ipynb       # Original failure analysis
-│   ├── 02_entropy_visualization.ipynb  # Entropy distribution study
-│   └── 03_results_comparison.ipynb     # Final results & figures
-│
-├── docs/
-│   ├── method.md                       # Detailed method description
-│   ├── architecture.md                 # GUI-Actor architecture notes
-│   ├── reproduction.md                 # Reproduction notes
-│   └── figures/                        # Paper figures
-│
-└── paper/
-    ├── main.tex                        # Workshop paper (4 pages)
-    ├── references.bib                  # Bibliography
-    └── figures/                         # LaTeX figures
+
+And evaluate on VenusBench-GD:
+```bibtex
+@misc{zhou2025venusbench,
+  title  = {VenusBench-GD: A Comprehensive Multi-Platform GUI Benchmark for Diverse Grounding Tasks},
+  author = {Zhou, Beitong and others},
+  year   = {2025},
+  eprint = {2512.16501},
+  archivePrefix = {arXiv}
+}
 ```
+"
