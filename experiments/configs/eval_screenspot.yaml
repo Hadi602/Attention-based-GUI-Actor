@@ -1,0 +1,20 @@
+"# Eval config — ScreenSpot regression (clean grounding only).
+# Confirms that the null_patch does NOT degrade vanilla performance.
+
+manifest_path: data/screenspot/manifest.jsonl
+patch_grid: [36, 36]
+threshold: 0.5
+batch_size: 8
+num_workers: 4
+
+backbone_path: \"src.models.gui_actor_backbone:build_backbone\"
+processor_path: \"src.models.gui_actor_backbone:build_processor\"
+
+head:
+  hidden_dim: 3584
+  patch_dim: 3584
+  tau: 1.0
+  tau_null: 1.0
+  init_null_scale: 0.001
+  use_proj: true
+"
