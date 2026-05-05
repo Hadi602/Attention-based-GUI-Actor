@@ -1,0 +1,27 @@
+"__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Data and checkpoints
+data/
+experiments/checkpoints/
+experiments/results/*.json
+experiments/results/*.csv
+experiments/results/*.png
+experiments/results/*.npz
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Env
+.env
+.venv/
+*.log
+
+# OS
+.DS_Store
+"
