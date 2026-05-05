@@ -1,0 +1,37 @@
+"# ScreenAbstain — full config (used for the headline numbers in paper)
+
+dataset:
+  clean_manifest: data/manifests/clean_train.jsonl
+  refusal_manifest: data/manifests/refusal_train.jsonl
+  refusal_fraction: 0.4
+  patch_grid: [36, 36]
+
+backbone_path: \"src.models.gui_actor_backbone:build_backbone\"
+processor_path: \"src.models.gui_actor_backbone:build_processor\"
+
+head:
+  hidden_dim: 3584
+  patch_dim: 3584
+  tau: 1.0
+  tau_null: 1.0
+  init_null_scale: 0.001
+  use_proj: true
+
+loss:
+  lambda_ref: 1.0
+  lambda_margin: 0.5            # margin penalty ENABLED for full run
+  margin_low: 0.1
+  margin_high: 0.7
+  label_smoothing: 0.05
+
+train:
+  epochs: 10
+  batch_size: 8
+  num_workers: 4
+  lr: 3.0e-4
+  weight_decay: 0.01
+  grad_clip: 1.0
+  amp: true
+  log_every: 50
+  train_full_head: true
+"
